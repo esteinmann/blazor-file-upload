@@ -1,0 +1,66 @@
+﻿@page "/"
+@using Microsoft.Extensions.Logging
+@inject ILogger<Index> Logger
+
+<h3>Upload File</h3>
+
+<p>
+    <label>
+        Max file size:
+        <input type="number" @bind="maxFileSize" />
+    </label>
+</p>
+
+<p>
+    <label>
+        Upload file up to @maxFileSize bytes:
+        <InputFile OnChange="@LoadFile" single />
+    </label>
+</p>
+
+@if (isLoading)
+{
+    <p>Uploading...</p>
+}
+else if(file != null)
+{    
+    <p>        
+        <ul>
+            <li>Name: @file.Name</li>
+            <li>Last modified: @file.LastModified.ToString()</li>
+            <li>Size (bytes): @file.Size</li>
+            <li>Content type: @file.ContentType</li>
+        </ul>
+    </p>
+    <p><strong>Base64</strong></p>
+    <textarea style="min-width:500px" rows="10">@base64</textarea>        
+}
+
+@code {
+    private IBrowserFile? file;
+    private string base64 = string.Empty;
+    private long maxFileSize = 1024 * 15;    
+    private bool isLoading;
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        isLoading = true;
+
+        try
+        {
+            file = e.File;
+
+            using var ms = new MemoryStream();
+            await e.File.OpenReadStream(maxFileSize).CopyToAsync(ms);
+            byte[] bytes = ms.ToArray();
+            base64 = Convert.ToBase64String(bytes);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError("File: {Filename} Error: {Error}", 
+                    file?.Name ?? "No file was uploaded", ex.Message);
+        }
+    
+        isLoading = false;
+    }
+}
