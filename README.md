@@ -1,0 +1,1 @@
+A simple project demonstrating converting uploaded file to base 64 in Index.razor page.
